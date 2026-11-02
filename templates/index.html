@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ site_name }} · {{ tagline }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+      <rect x="3" y="8" width="4" height="20" rx="1" fill="currentColor"/>
+      <rect x="6" y="11" width="24" height="4" rx="2" fill="currentColor" transform="rotate(-18 6 13)"/>
+      <rect x="2" y="27" width="8" height="3" rx="1" fill="currentColor"/></svg></div>
+    <div>
+      <div class="brand-name">{{ site_name }}</div>
+      <div class="brand-tag">{{ tagline }}</div>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="gate">Gate</button>
+    <button class="tab" data-tab="residents">Residents</button>
+    <button class="tab" data-tab="log">Entry Log</button>
+  </nav>
+  <div class="status-pills">
+    <span id="pill-camera" class="pill">Camera…</span>
+    <span id="pill-reader" class="pill">OCR loading…</span>
+  </div>
+</header>
+
+<main>
+<!-- =============================== GATE =============================== -->
+<section id="tab-gate" class="tab-page active">
+  <div class="gate-grid">
+    <div class="card video-card">
+      <div class="video-wrap">
+        <img id="video" src="/video_feed" alt="Live camera">
+        <div id="paused-banner" class="paused hidden">
+          Showing an uploaded photo · <button id="btn-resume" class="link">back to live camera</button>
+        </div>
+      </div>
+      <div class="video-controls">
+        <label>Camera
+          <select id="camera-select">
+            <option value="0">0</option><option value="1">1</option>
+            <option value="2">2</option><option value="3">3</option>
+          </select>
+        </label>
+        <label class="btn secondary" for="upload">Upload a photo
+          <input id="upload" type="file" accept="image/*" hidden>
+        </label>
+        <button id="btn-mute" class="btn secondary">🔊 Sound on</button>
+        <span class="meta" id="meta"></span>
+      </div>
+      <div id="camera-msg" class="camera-msg hidden"></div>
+    </div>
+
+    <div class="side">
+      <div id="verdict" class="card verdict idle">
+        <div class="verdict-icon" id="v-icon">◌</div>
+        <div class="verdict-title" id="v-title">Waiting for vehicle</div>
+        <div class="verdict-sub" id="v-sub">Hold a number plate up to the camera.</div>
+        <div class="plate-big hidden" id="v-plate"></div>
+        <div class="verdict-details" id="v-details"></div>
+        <button id="btn-visitor" class="btn visitor hidden">Allow as visitor (guard override)</button>
+      </div>
+
+      <div class="card readings">
+        <h3>What the system read</h3>
+        <table>
+          <tr><td>EasyOCR</td><td id="r-easy">–</td></tr>
+          <tr><td>Template matching</td><td id="r-tpl">–</td></tr>
+          <tr><td>After plate-format correction</td><td id="r-corr">–</td></tr>
+          <tr><td>Confirmation</td><td id="r-votes">–</td></tr>
+        </table>
+        <p class="hint" id="r-hint"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card bts">
+    <div class="bts-head">
+      <div>
+        <h2>Behind the scenes</h2>
+        <p>Every step the image goes through, live, with the syllabus unit it comes from.</p>
+      </div>
+      <div class="bts-controls">
+        <label><input type="checkbox" id="bts-freeze"> Freeze</label>
+        <select id="bts-filter">
+          <option value="">All units</option>
+          <option>Unit 1</option><option>Unit 2</option><option>Unit 3</option><option>Unit 4</option>
+          <option>Unit 5</option><option>Unit 6</option><option>Unit 7</option><option>Unit 8</option>
+        </select>
+      </div>
+    </div>
+    <div id="steps" class="steps"><p class="empty">Waiting for the first frame…</p></div>
+  </div>
+</section>
+
+<!-- ============================= RESIDENTS ============================ -->
+<section id="tab-residents" class="tab-page">
+  <div class="res-grid">
+    <div class="card">
+      <h2>Register a vehicle</h2>
+      <p class="muted">Each vehicle belongs to exactly one flat. A flat can have several vehicles.</p>
+      <form id="add-form" autocomplete="off">
+        <label>Number plate<input name="plate" placeholder="MH 02 AB 1234" required></label>
+        <label>Owner name<input name="owner" placeholder="Rahul Sharma" required></label>
+        <label>Flat<input name="flat" placeholder="B-402" required></label>
+        <button class="btn" type="submit">Add vehicle</button>
+        <div id="add-msg" class="form-msg"></div>
+      </form>
+    </div>
+    <div class="card">
+      <div class="list-head">
+        <h2>Registered vehicles <span id="res-count" class="count"></span></h2>
+        <input id="res-search" placeholder="Search plate, owner or flat">
+      </div>
+      <table class="data">
+        <thead><tr><th>Flat</th><th>Owner</th><th>Plate</th><th>Added</th><th></th></tr></thead>
+        <tbody id="res-body"></tbody>
+      </table>
+      <p id="res-empty" class="empty">No vehicles registered yet. Add one on the left.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================ LOG =============================== -->
+<section id="tab-log" class="tab-page">
+  <div class="card">
+    <div class="list-head">
+      <h2>Entry log <span id="log-count" class="count"></span></h2>
+      <div>
+        <a class="btn secondary" href="/api/log.csv">Download CSV</a>
+        <button id="btn-clear-log" class="btn danger">Clear log</button>
+      </div>
+    </div>
+    <table class="data">
+      <thead><tr><th>Time</th><th>Plate</th><th>Result</th><th>Owner</th><th>Flat</th><th>Plate type</th><th>Source</th></tr></thead>
+      <tbody id="log-body"></tbody>
+    </table>
+    <p id="log-empty" class="empty">No vehicles seen yet.</p>
+  </div>
+</section>
+</main>
+
+<footer>IVP course project · License plate detection &amp; recognition with classical image processing</footer>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
