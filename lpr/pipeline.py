@@ -211,7 +211,17 @@ def classify_plate_colour(plate_bgr: np.ndarray, binary: np.ndarray | None, char
     vis[green > 0] = (60, 180, 60)
     vis[(yellow == 0) & (green == 0)] = (90, 90, 90)
 
-    if v < 80:
+    # Polarity: are the characters lighter than the background?  Black
+    # (rental) and green (EV) plates have light text; white and yellow plates
+    # have dark text.  Using this relative test instead of an absolute
+    # brightness threshold keeps a dimly lit white plate from being called black.
+    light_text, char_v = False, None
+    if binary is not None and binary.shape[:2] == plate_bgr.shape[:2] and (binary > 0).any():
+        char_v = float(np.median(hsv[..., 2][binary > 0]))
+        light_text = char_v > v + 25
+    if light_text:
+        if 40 < h <= 90 and s > 60 and v > 0.4 * char_v:
+            return "green", "Green plate - electric vehicle", vis
         return "black", "Black plate - self-drive rental", vis
     if 15 <= h <= 40 and s > 70:
         return "yellow", "Yellow plate - commercial vehicle", vis
